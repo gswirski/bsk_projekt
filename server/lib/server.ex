@@ -1,29 +1,18 @@
 defmodule Server do
-  def ac() do
-    port = 24948
-    opts = [
-      certfile: "server.crt",
-      keyfile: "server.key",
-      reuseaddr: true,
-      versions: [:"tlsv1.2"],
-      active: false
-    ]
+  def accept(port, opts) do
     :ssl.start()
     {:ok, socket} = :ssl.listen(port, opts)
-    IO.inspect(socket)
     IO.puts "Accepting connections on port #{port}"
     loop_acceptor(socket)
   end
 
-  def st() do
-    :ssl.stop()
-  end
-
   defp loop_acceptor(socket) do
     {:ok, client} = :ssl.transport_accept(socket)
-    ok = :ssl.ssl_accept(client)
-    IO.inspect(ok)
-    serve(client, 1)
+    :ok = :ssl.ssl_accept(client)
+    {:ok, pid} = Task.Supervisor.start_child(Pung.TaskSupervisor, fn ->
+      serve(client, 1)
+    end)
+    :ok = :ssl.controlling_process(client, pid)
     loop_acceptor(socket)
   end
 
