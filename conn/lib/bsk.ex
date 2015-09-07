@@ -1,4 +1,4 @@
-defmodule Pung do
+defmodule Bsk do
   use Application
 
   def start(_type, _args) do
@@ -10,16 +10,14 @@ defmodule Pung do
       keyfile: "server.key",
       reuseaddr: true,
       versions: [:"tlsv1.2"],
-      active: true,
-      packet: :line,
+      active: false
     ]
 
     children = [
-      supervisor(Task.Supervisor, [[name: Pung.TaskSupervisor]]),
-      worker(Task, [Acceptor, :accept, [port, server_opts]]),
+      worker(Listener, [port, server_opts])
     ]
 
-    opts = [strategy: :one_for_one, name: Pung.Supervisor]
+    opts = [strategy: :one_for_one, name: Bsk.Supervisor]
     Supervisor.start_link(children, opts)
   end
 end

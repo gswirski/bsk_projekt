@@ -1,32 +1,26 @@
 defmodule Server do
-  def accept(port, opts) do
-    :ssl.start()
-    {:ok, socket} = :ssl.listen(port, opts)
-    IO.puts "Accepting connections on port #{port}"
-    loop_acceptor(socket)
-  end
-
-  defp loop_acceptor(socket) do
-    {:ok, client} = :ssl.transport_accept(socket)
-    :ok = :ssl.ssl_accept(client)
-    {:ok, pid} = Task.Supervisor.start_child(Pung.TaskSupervisor, fn ->
-      serve(client, 1)
-    end)
-    :ok = :ssl.controlling_process(client, pid)
-    loop_acceptor(socket)
-  end
-
-  defp serve(socket, res) do
+  def serve(socket, res) do
     request = read_line(socket)
+    IO.puts "Version B"
     case request do
       {c, s, "signup", pyld} ->
         signup_user(request, socket, res)
       {c, s, "check", pyld} ->
         check_user(request, socket, res)
+      {c, s, "add_friend", pyld} ->
+        add_friend(request, socket, res)
       _ ->
         write_line('s16 c1 ok\nwat\n', socket)
     end
     serve(socket, res + 1)
+  end
+
+  defp add_friend(request, socket, res) do
+    c = elem(request, 0)
+    payload = elem(request, 3)
+    user = String.strip(payload)
+    data = 's#{res} c#{c} ok\n\n'
+    write_line(data, socket)
   end
 
   defp signup_user(request, socket, res) do
