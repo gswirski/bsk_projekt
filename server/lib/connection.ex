@@ -52,12 +52,25 @@ defmodule Connection do
     User.put(state.current_user, :name, "#{login}@localhost")
     User.put(state.current_user, :der_key, b64_der)
     User.put(state.current_user, :public_key, key)
+    verify_user(state.current_user, c)
+    state
+  end
+
+  def handle(%Request{cmd: "login", c: c, payload: payload}, state) do
+    {:ok, user} = User.Registry.lookup(state.users, "#{payload}@localhost")
+    key = User.fetch(user, :public_key)
+    state = %{state | current_user: user}
+    verify_user(state.current_user, c)
+    state
+  end
+
+  def verify_user(user, c) do
+    key = User.fetch(user, :public_key)
     secret = "dupa"
     payload = :public_key.encrypt_public(secret, key)
     payload = :base64.encode(payload)
     data = 'c#{c} decrypt\n#{payload}\n'
     Kernel.send(self(), {:send, data})
-    state
   end
 
   def handle(%Request{cmd: "check", c: c, payload: payload}, state) do
