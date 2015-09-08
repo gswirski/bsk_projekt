@@ -58,16 +58,22 @@ defmodule Connection do
 
   def handle(%Request{cmd: "login", c: c, payload: payload}, state) do
     {:ok, user} = User.Registry.lookup(state.users, "#{payload}@localhost")
-    key = User.fetch(user, :public_key)
+    User.put(user, :conn, self())
     state = %{state | current_user: user}
+    IO.puts "login"
+    IO.inspect(self())
+    IO.inspect(user)
+    IO.inspect(state.current_user)
+    key = User.fetch(user, :public_key)
     verify_user(state.current_user, c)
+    friends = User.fetch(state.current_user, :friends_handler)
+    User.Friends.flush(friends)
     state
   end
 
   def verify_user(user, c) do
     key = User.fetch(user, :public_key)
     secret = :base64.encode(:crypto.strong_rand_bytes(32))
-    payload = :crypto.public_encrypt(:rsa, secret, key, :rsa_pkcs1_oaep_padding)
     payload = :public_key.encrypt_public(secret, key)
     payload = :base64.encode(payload)
     data = 'c#{c} decrypt\n#{payload}\n'
