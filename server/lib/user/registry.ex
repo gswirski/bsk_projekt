@@ -5,10 +5,10 @@ defmodule User.Registry do
     GenServer.start_link(__MODULE__, HashDict.new, opts)
   end
 
-  def sign_up(registry, user) do
+  def login(registry, user) do
     IO.puts "SIGN_UP"
     IO.inspect(user)
-    GenServer.call(registry, {:sign_up, user})
+    GenServer.call(registry, {:login, user})
   end
 
   def lookup(registry, login) do
@@ -21,13 +21,9 @@ defmodule User.Registry do
     {:reply, HashDict.fetch(users, login), users}
   end
 
-  def handle_call({:sign_up, user}, _from, users) do
+  def handle_call({:login, user}, _from, users) do
     name = User.fetch(user, :name)
-    if HashDict.has_key?(users, name) do
-      {:reply, :ok, users}
-    else
-      {:reply, :ok, HashDict.put(users, name, user)}
-    end
+    {:reply, :ok, HashDict.put(users, name, user)}
   end
 end
 

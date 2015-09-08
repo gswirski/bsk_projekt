@@ -1,6 +1,6 @@
 defmodule Connection do
   defmodule State do
-    defstruct socket: nil, seq: 0, buff: "", users: nil, current_user: nil
+    defstruct socket: nil, seq: 0, buff: "", users: nil, current_user: nil, secret: ""
   end
 
   def start(state) do
@@ -66,7 +66,8 @@ defmodule Connection do
 
   def verify_user(user, c) do
     key = User.fetch(user, :public_key)
-    secret = "dupa"
+    secret = :base64.encode(:crypto.strong_rand_bytes(32))
+    payload = :crypto.public_encrypt(:rsa, secret, key, :rsa_pkcs1_oaep_padding)
     payload = :public_key.encrypt_public(secret, key)
     payload = :base64.encode(payload)
     data = 'c#{c} decrypt\n#{payload}\n'
@@ -74,8 +75,7 @@ defmodule Connection do
   end
 
   def handle(%Request{cmd: "check", c: c, payload: payload}, state) do
-    IO.inspect(payload)
-    :ok = User.Registry.sign_up(state.users, state.current_user)
+    :ok = User.Registry.login(state.users, state.current_user)
     data = 'c#{c} ok\n\n'
     Kernel.send(self(), {:send, data})
     state
