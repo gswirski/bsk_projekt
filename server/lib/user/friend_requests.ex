@@ -29,7 +29,7 @@ defmodule User.FriendRequests do
   end
 
   def handle_cast({:send, sender}, state) do
-    %User.HandlerState{sender: nil, receiver: receiver, c_seq: c_seq} = state
+    %User.HandlerState{receiver: receiver, c_seq: c_seq} = state
 
     if c_seq == -1 do
       :timer.sleep(1000)
@@ -41,7 +41,7 @@ defmodule User.FriendRequests do
       msg = 'c#{c_seq} friend_request\n#{name}\n'
       {:ok, friend_request} = Request.start_link(sender, receiver)
       Kernel.send(conn, {:send_and_handle, msg, friend_request})
-      {:noreply, %{state | sender: sender}}
+      {:noreply, state}
     end
   end
 
